@@ -4,11 +4,11 @@
 
 typedef struct Data
 {
-    uint64_t occupied; // occupancy without kings, A8 = 0
+    uint64_t occupied; // occupancy without kings, A1 = 0
     int16_t eval;     
     int8_t result;     // -1 , 0 , 1
     uint8_t side;      // 1 for black 0 for white
-    uint8_t wking;     // king square , A1= 0
+    uint8_t wking;     // king square
     uint8_t bking;
     uint8_t packed[15]; // 2 pieces in one byte
 } Data;
@@ -61,14 +61,14 @@ int read_position(Data *data)
         if (num % 2)
         {
             piece = data->packed[num / 2] >> 4;
-            active_features[BLACK][num] = nn_indices[1][piece] * 64 + sq;
-            active_features[WHITE][num++] = piece * 64 + Mirror(sq);
+            active_features[BLACK][num]   = nn_indices[BLACK][piece] * 64 + Mirror(sq);
+            active_features[WHITE][num++] = piece * 64 + sq;
         }
         else
         {
             piece = data->packed[num / 2] & 15;
-            active_features[BLACK][num] = nn_indices[1][piece] * 64 + sq;
-            active_features[WHITE][num++] = piece * 64 + Mirror(sq);
+            active_features[BLACK][num] = nn_indices[BLACK][piece] * 64 + Mirror(sq);
+            active_features[WHITE][num++] = piece * 64 + sq;
         }
     }
 

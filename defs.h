@@ -15,10 +15,10 @@
 
 #define TRANINNG_FILE "farseer_shuffled.bin"
 
-#define SigmoidCoefficient (1.0f / 280.0f)
+#define SigmoidCoefficient (1.0f / 273.0f)
 #define BlockSize 256
 
-#define BATCH_SIZE 16384 // needs to be power of 32
+#define BATCH_SIZE 16384 
 #define MAX_ACTIVE_FEATURE 32
 #define LR 0.002
 

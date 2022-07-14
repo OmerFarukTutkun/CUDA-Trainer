@@ -80,6 +80,8 @@ int main()
 		}
 	}
 
+	saveNN(model, "devre.nnue");
+
 	freeMatrix(loss);
 	freeAdam(optimizer);
 	freeNN(model);
