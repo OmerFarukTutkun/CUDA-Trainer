@@ -24,7 +24,7 @@ __global__ void feature_transformer_slice_forward(int32_t *feature_indices, floa
 {
 
 	const uint32_t max_active_features = MAX_ACTIVE_FEATURE;
-	const uint32_t output_thread_slice_size = L1 / BlockSize;
+	const uint32_t output_thread_slice_size = L1 / FT_BLOCK_SIZE;
 	const uint32_t output_size = L1;
 
 	__shared__ float shared_output[output_size];
@@ -63,7 +63,7 @@ __global__ void feature_transformer_slice_forward(int32_t *feature_indices, floa
 __global__ void feature_transformer_slice_backward(int32_t *feature_indices, float *weight_grad, float *bias_grad, float *output_grad)
 {
 	const uint32_t max_active_features = MAX_ACTIVE_FEATURE;
-	const uint32_t output_thread_slice_size = L1 / BlockSize;
+	const uint32_t output_thread_slice_size = L1 / FT_BLOCK_SIZE;
 	const uint32_t output_size = L1;
 
 	__shared__ float shared_output_grad[output_size];

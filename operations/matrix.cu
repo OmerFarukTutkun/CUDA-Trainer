@@ -11,7 +11,7 @@ Matrix *createMatrix(int rows, int columns)
 	cudaMallocManaged(&data, rows * columns * sizeof(float));
 
 	assert(matrix != NULL && data != NULL);
-
+	cudaMemset (data, 0 , sizeof(float) * rows*columns );
 	matrix->data = data;
 	matrix->rows = rows;
 	matrix->columns = columns;

@@ -5,10 +5,10 @@
 typedef struct Data
 {
     uint64_t occupied; // occupancy without kings, A1 = 0
-    int16_t eval;     
-    int8_t result;     // -1 , 0 , 1
-    uint8_t side;      // 1 for black 0 for white
-    uint8_t wking;     // king square
+    int16_t eval;
+    int8_t result; // -1 , 0 , 1
+    uint8_t side;  // 1 for black 0 for white
+    uint8_t wking; // king square
     uint8_t bking;
     uint8_t packed[15]; // 2 pieces in one byte
 } Data;
@@ -16,22 +16,24 @@ typedef struct Data
 #define Mirror(sq) (sq ^ 56)
 #define HorizontalMirror(sq) (sq ^ 7)
 
-enum Pieces{
-    PAWN   = 0, 
-    KNIGHT = 1, 
-    BISHOP = 2, 
-    ROOK   = 3,  
-    QUEEN  = 4, 
-    KING   = 5,
-    BLACK_PAWN   = 6, 
+enum Pieces
+{
+    PAWN = 0,
+    KNIGHT = 1,
+    BISHOP = 2,
+    ROOK = 3,
+    QUEEN = 4,
+    KING = 5,
+    BLACK_PAWN = 6,
     BLACK_KNIGHT = 7,
-    BLACK_BISHOP = 8, 
-    BLACK_ROOK   = 9, 
-    BLACK_QUEEN  = 10,  
-    BLACK_KING   = 11,
+    BLACK_BISHOP = 8,
+    BLACK_ROOK = 9,
+    BLACK_QUEEN = 10,
+    BLACK_KING = 11,
 };
 
-enum Colors{
+enum Colors
+{
     WHITE = 0,
     BLACK = 1,
 };
@@ -61,13 +63,13 @@ int read_position(Data *data)
         if (num % 2)
         {
             piece = data->packed[num / 2] >> 4;
-            active_features[BLACK][num]   = nn_indices[BLACK][piece] * 64 + Mirror(sq);
+            active_features[BLACK][num] = nn_indices[BLACK][piece] * 64 + Mirror(sq);
             active_features[WHITE][num++] = piece * 64 + sq;
         }
         else
         {
             piece = data->packed[num / 2] & 15;
-            active_features[BLACK][num] = nn_indices[BLACK][piece] * 64 + Mirror(sq);
+            active_features[BLACK][num]   = nn_indices[BLACK][piece] * 64 + Mirror(sq);
             active_features[WHITE][num++] = piece * 64 + sq;
         }
     }
@@ -80,7 +82,7 @@ int read_position(Data *data)
 
     return num;
 }
-void load_data(Data *data, int number_of_data, int32_t *feature_indices_us, int32_t *feature_indices_enemy, float *target)
+void load_data(Data *data, int number_of_data, int32_t *feature_indices_us, int32_t *feature_indices_enemy, float *cp, float *wdl)
 {
     int k = 0;
     for (int i = 0; i < number_of_data; i++)
@@ -91,12 +93,13 @@ void load_data(Data *data, int number_of_data, int32_t *feature_indices_us, int3
             feature_indices_us[MAX_ACTIVE_FEATURE * i + j] = active_features[data[i].side][j];
             feature_indices_enemy[MAX_ACTIVE_FEATURE * i + j] = active_features[!data[i].side][j];
         }
-        for(int j=num ; j<MAX_ACTIVE_FEATURE ; j++)
+        for (int j = num; j < MAX_ACTIVE_FEATURE; j++)
         {
             feature_indices_us[MAX_ACTIVE_FEATURE * i + j] = -1;
             feature_indices_enemy[MAX_ACTIVE_FEATURE * i + j] = -1;
         }
-        target[i] = data[i].eval;
+        cp[i] = data[i].eval;
+        wdl[i] = (data[i].result + 1) / 2.0;
         k++;
     }
 }

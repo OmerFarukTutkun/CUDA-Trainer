@@ -1,0 +1,3 @@
+*.nnue
+*.bin
+cuda_trainer

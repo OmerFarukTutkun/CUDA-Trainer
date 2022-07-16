@@ -18,7 +18,7 @@ int main()
 	Adam *optimizer = (Adam *)malloc(sizeof(Adam));
 
 	initNN(model);
-	initAdam(optimizer, model, LR , true);
+	initAdam(optimizer, model, LR, true);
 
 	FILE *file = fopen(TRANINNG_FILE, "rb");
 	Data *buffer = (Data *)malloc(sizeof(Data) * BATCH_SIZE);
@@ -31,8 +31,13 @@ int main()
 	cudaMalloc(&feature_indices_us_gpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
 	cudaMalloc(&feature_indices_enemy_gpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
 
-	float *target_cpu = (float *)malloc(sizeof(float) * BATCH_SIZE);
-	Matrix *target_gpu = createMatrix(BATCH_SIZE, 1);
+	float *eval_cpu = (float *)malloc(sizeof(float) * BATCH_SIZE);
+	Matrix *eval_gpu = createMatrix(BATCH_SIZE, 1);
+
+	float *result_cpu = (float *)malloc(sizeof(float) * BATCH_SIZE);
+	Matrix *result_gpu = createMatrix(BATCH_SIZE, 1);
+
+	Matrix *target = createMatrix(BATCH_SIZE, 1);
 
 	if (file == NULL)
 	{
@@ -50,18 +55,22 @@ int main()
 		}
 		if (!fread(buffer, sizeof(Data), BATCH_SIZE, file))
 			break;
-		load_data(buffer, BATCH_SIZE, feature_indices_us_cpu, feature_indices_enemy_cpu, target_cpu);
+		load_data(buffer, BATCH_SIZE, feature_indices_us_cpu, feature_indices_enemy_cpu, eval_cpu, result_cpu);
 
 		cudaMemcpy(feature_indices_enemy_gpu, feature_indices_enemy_cpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE, cudaMemcpyHostToDevice);
 		cudaMemcpy(feature_indices_us_gpu, feature_indices_us_cpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE, cudaMemcpyHostToDevice);
-		cudaMemcpy(target_gpu->data, target_cpu, BATCH_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(eval_gpu->data, eval_cpu, BATCH_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(result_gpu->data, result_cpu, BATCH_SIZE * sizeof(float), cudaMemcpyHostToDevice);
 
-		linearFunction(target_gpu, target_gpu, SigmoidCoefficient, 0.0f);
-		sigmoid(target_gpu, target_gpu);
+		linearFunction(eval_gpu, eval_gpu, SigmoidCoefficient, 0.0f);
+		sigmoid(eval_gpu, eval_gpu);
+
+		linearFunction3Variable(eval_gpu, result_gpu, target, LAMBDA, 1 - LAMBDA, 0.0f);
 
 		forward_model(feature_indices_us_gpu, feature_indices_enemy_gpu, model);
-		backward_model(model, target_gpu, loss, feature_indices_us_gpu, feature_indices_enemy_gpu);
+		backward_model(model, target, loss, feature_indices_us_gpu, feature_indices_enemy_gpu);
 		AdamOptimizer(optimizer);
+
 		if (i % 1000 == 999)
 		{
 			printf("step: %d  ", i + 1);
@@ -74,7 +83,7 @@ int main()
 		if (i % 6000 == 5999)
 		{
 			char filename[100];
-			sprintf(filename, "devre_epoch%d.nnue", (i + 1)/ 6000);
+			sprintf(filename, "devre_epoch%d.nnue", (i + 1) / 6000);
 			saveNN(model, filename);
 			printf("%d. epoch finished\n", i / 6000 + 1);
 		}
@@ -93,8 +102,11 @@ int main()
 	cudaFree(feature_indices_enemy_gpu);
 	cudaFree(feature_indices_us_gpu);
 
-	free(target_cpu);
-	freeMatrix(target_gpu);
+	free(result_cpu);
+	freeMatrix(result_gpu);
+	free(eval_cpu);
+	freeMatrix(eval_gpu);
+	freeMatrix(target);
 
 	printf("training finished\n");
 	return 0;
