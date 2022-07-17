@@ -1,3 +1,4 @@
 *.nnue
 *.bin
+*.log
 cuda_trainer

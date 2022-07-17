@@ -21,6 +21,13 @@ int main()
 	initAdam(optimizer, model, LR, true);
 
 	FILE *file = fopen(TRANINNG_FILE, "rb");
+	FILE *log  = fopen("training.log" , "w");
+
+	time_t tm;
+    time(&tm);
+    fprintf(log , "Date = %s", ctime(&tm));
+	fprintf(log, "Arch name: %s\n" ,ARCH_NAME);
+
 	Data *buffer = (Data *)malloc(sizeof(Data) * BATCH_SIZE);
 
 	int32_t *feature_indices_us_cpu = (int32_t *)malloc(MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
@@ -73,11 +80,11 @@ int main()
 
 		if (i % 1000 == 999)
 		{
-			printf("step: %d  ", i + 1);
-			printf("loss : %f", sumMatrix(loss) / (1000 * BATCH_SIZE));
+			float average_loss = sumMatrix(loss) / (1000 * BATCH_SIZE);
 			float time_in_sec = (clock() - start_clk) / (float)CLOCKS_PER_SEC;
-			float nps = (1000 * BATCH_SIZE) / time_in_sec;
-			printf("	nps: %ld\n", (long int)nps);
+			int nps = (1000 * BATCH_SIZE) / time_in_sec;
+			printf("step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
+			fprintf(log , "step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
 			zeroMatrix(loss);
 		}
 		if (i % 6000 == 5999)
@@ -96,6 +103,7 @@ int main()
 	freeNN(model);
 
 	fclose(file);
+	fclose(log);
 	free(buffer);
 	free(feature_indices_enemy_cpu);
 	free(feature_indices_us_cpu);

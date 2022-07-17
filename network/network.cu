@@ -36,6 +36,16 @@ void saveNN(NN *model, const char *filename)
     }
     fclose(file);
 }
+void readNN(NN *model, const char *filename)
+{
+    FILE *file = fopen(filename, "rb");
+    for(int i=0; i<model->num_of_layers ; i++)
+    {
+        fread(model->layers[i].weights->data , sizeof(float) ,model->layers[i].weights->rows* model->layers[i].weights->columns , file);
+        fread(model->layers[i].biases->data , sizeof(float) ,model->layers[i].biases->rows* model->layers[i].biases->columns , file);
+    }
+    fclose(file);
+}
 void freeNN(NN *model)
 {
     for (int i = 0; i < model->num_of_layers; i++)
