@@ -6,7 +6,6 @@
 #include "optimizer/adam.h"
 #include "training_data_loader.h"
 #include <unistd.h>
-
 int main()
 {
 	srand(time(NULL));
@@ -21,12 +20,12 @@ int main()
 	initAdam(optimizer, model, LR, true);
 
 	FILE *file = fopen(TRANINNG_FILE, "rb");
-	FILE *log  = fopen("training.log" , "w");
+	FILE *log = fopen("training.log", "w");
 
 	time_t tm;
-    time(&tm);
-    fprintf(log , "Date = %s", ctime(&tm));
-	fprintf(log, "Arch name: %s\n" ,ARCH_NAME);
+	time(&tm);
+	fprintf(log, "Date = %s", ctime(&tm));
+	fprintf(log, "Arch name: %s\n", ARCH_NAME);
 
 	Data *buffer = (Data *)malloc(sizeof(Data) * BATCH_SIZE);
 
@@ -84,7 +83,9 @@ int main()
 			float time_in_sec = (clock() - start_clk) / (float)CLOCKS_PER_SEC;
 			int nps = (1000 * BATCH_SIZE) / time_in_sec;
 			printf("step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
-			fprintf(log , "step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
+			fprintf(log, "step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
+			fclose(log);
+			log = fopen("training.log", "a");
 			zeroMatrix(loss);
 		}
 		if (i % 6000 == 5999)
@@ -95,7 +96,6 @@ int main()
 			printf("%d. epoch finished\n", i / 6000 + 1);
 		}
 	}
-
 	saveNN(model, "devre.nnue");
 
 	freeMatrix(loss);

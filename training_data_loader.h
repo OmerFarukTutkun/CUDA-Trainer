@@ -37,6 +37,16 @@ enum Colors
     WHITE = 0,
     BLACK = 1,
 };
+int king_indices[64]{
+    0, 1, 2, 3, 3, 2, 1, 0,
+    4, 5, 6, 7, 7, 6, 5, 4,
+    8, 9, 10, 11, 11, 10, 9, 8,
+    12, 13, 14, 15, 15, 14, 13, 12,
+    16, 17, 18, 19, 19, 18, 17, 16,
+    20, 21, 22, 23, 23, 22, 21, 20,
+    24, 25, 26, 27, 27, 26, 25, 24,
+    28, 29, 30, 31, 31, 30, 29, 28};
+
 int32_t active_features[2][MAX_ACTIVE_FEATURE];
 const uint8_t nn_indices[2][12] = {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, {6, 7, 8, 9, 10, 11, 0, 1, 2, 3, 4, 5}};
 
@@ -50,6 +60,18 @@ int poplsb(uint64_t *bb)
     *bb &= *bb - 1;
     return lsb;
 }
+int nn_index(int king, int piece, int sq, int side)
+{
+    if (side == BLACK)
+    {
+        sq = Mirror(sq);
+        king = Mirror(king);
+    }
+    if (king % 8 < 4)
+        return king_indices[king] * 768 + nn_indices[side][piece] * 64 + HorizontalMirror(sq);
+    else
+        return king_indices[king] * 768 + nn_indices[side][piece] * 64 + sq;
+}
 int read_position(Data *data)
 {
     int num = 0, sq = 0, piece = 0;
@@ -61,24 +83,19 @@ int read_position(Data *data)
     {
         sq = poplsb(&data->occupied);
         if (num % 2)
-        {
             piece = data->packed[num / 2] >> 4;
-            active_features[BLACK][num] = nn_indices[BLACK][piece] * 64 + Mirror(sq);
-            active_features[WHITE][num++] = piece * 64 + sq;
-        }
         else
-        {
             piece = data->packed[num / 2] & 15;
-            active_features[BLACK][num]   = nn_indices[BLACK][piece] * 64 + Mirror(sq);
-            active_features[WHITE][num++] = piece * 64 + sq;
-        }
+
+        active_features[BLACK][num] = nn_index(bking, piece, sq, BLACK);
+        active_features[WHITE][num++] = nn_index(wking, piece, sq, WHITE);
     }
 
-    active_features[BLACK][num] = 5 * 64 + Mirror(bking);
-    active_features[WHITE][num++] = 11 * 64 + bking;
+    active_features[BLACK][num] = nn_index(bking, BLACK_KING, bking, BLACK);
+    active_features[WHITE][num++] = nn_index(wking, BLACK_KING, bking, WHITE);
 
-    active_features[BLACK][num] = 11 * 64 + Mirror(wking);
-    active_features[WHITE][num++] = 5 * 64 + wking;
+    active_features[BLACK][num] = nn_index(bking, KING, wking, BLACK);
+    active_features[WHITE][num++] = nn_index(wking, KING, wking, WHITE);
 
     return num;
 }

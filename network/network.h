@@ -4,7 +4,7 @@
 #include "../layers/layer.h"
 #include "../loss/loss.h"
 
-#define ARCH_NAME "768->(2x512)->1"
+#define ARCH_NAME "32*768->(2x512)->1"
 
 typedef struct NN
 {
