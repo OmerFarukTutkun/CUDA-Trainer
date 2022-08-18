@@ -1,7 +1,7 @@
 CC       = nvcc 
-LIBS     = -lcublas -lcusparse
+LIBS     = -lcublas 
 EXE      = cuda_trainer
 SRC      = $(wildcard *.cu */*.cu */*/*.cu)
-FLAGS    = -dlto -Xcompiler "-march=native -Ofast"
+FLAGS    = -Xcompiler "-march=native -Ofast"
 default:
 	$(CC) $(FLAGS) $(SRC) $(LIBS) -o $(EXE)

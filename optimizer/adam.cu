@@ -16,25 +16,18 @@ void initAdam(Adam *optimizer, NN *model, float lr, int clip)
 }
 void AdamOptimizer(Adam *optimizer)
 {
-
     for (int i = 0; i < optimizer->model->num_of_layers; i++)
     {
         int size = optimizer->moments[i].moment1_W->rows * optimizer->moments[i].moment1_W->columns;
         int nBlocks = (size - 1) / BlockSize + 1;
         AdamOptimizerKernel<<<nBlocks, BlockSize>>>(optimizer->model->layers[i].weights->data, optimizer->model->layers[i].weight_gradients->data,
-                                                   optimizer->moments[i].moment1_W->data, optimizer->moments[i].moment2_W->data, size, optimizer->lr, beta1, beta2, epsilon);
+                                                   optimizer->moments[i].moment1_W->data, optimizer->moments[i].moment2_W->data, size, optimizer->lr, beta1, beta2, epsilon, optimizer->clip);
         cudaDeviceSynchronize();
-
         size = optimizer->moments[i].moment1_b->rows * optimizer->moments[i].moment1_b->columns;
         nBlocks = (size - 1) / BlockSize + 1;
         AdamOptimizerKernel<<<nBlocks, BlockSize>>>(optimizer->model->layers[i].biases->data, optimizer->model->layers[i].bias_gradients->data,
-                                                   optimizer->moments[i].moment1_b->data, optimizer->moments[i].moment2_b->data, size, optimizer->lr, beta1, beta2, epsilon);
+                                                   optimizer->moments[i].moment1_b->data, optimizer->moments[i].moment2_b->data, size, optimizer->lr, beta1, beta2, epsilon, optimizer->clip);
         cudaDeviceSynchronize();
-        if (optimizer->clip)
-        {
-            clipMatrix(optimizer->model->layers[i].weights, clip_min, clip_max);
-            clipMatrix(optimizer->model->layers[i].biases, clip_min, clip_max);
-        }
     }
 }
 void freeAdam(Adam *optimizer)

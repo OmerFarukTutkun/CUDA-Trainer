@@ -3,7 +3,6 @@
 
 #include <assert.h>
 #include <cublas_v2.h>
-#include <cusparse_v2.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>

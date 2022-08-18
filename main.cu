@@ -44,7 +44,7 @@ int main()
 	Matrix *result_gpu = createMatrix(BATCH_SIZE, 1);
 
 	Matrix *target = createMatrix(BATCH_SIZE, 1);
-
+	
 	if (file == NULL)
 	{
 		printf("Traning data could not open\n");
@@ -52,13 +52,9 @@ int main()
 	}
 	printf("training started\n");
 	int number_of_epoch = 50;
+	long int clk = clock();
 	for (int i = 0; i < 6000 * number_of_epoch; i++)
 	{
-		long int start_clk;
-		if (i % 1000 == 0)
-		{
-			start_clk = clock();
-		}
 		if (!fread(buffer, sizeof(Data), BATCH_SIZE, file))
 			break;
 		load_data(buffer, BATCH_SIZE, feature_indices_us_cpu, feature_indices_enemy_cpu, eval_cpu, result_cpu);
@@ -72,21 +68,23 @@ int main()
 		sigmoid(eval_gpu, eval_gpu);
 
 		linearFunction3Variable(eval_gpu, result_gpu, target, LAMBDA, 1 - LAMBDA, 0.0f);
-
 		forward_model(feature_indices_us_gpu, feature_indices_enemy_gpu, model);
 		backward_model(model, target, loss, feature_indices_us_gpu, feature_indices_enemy_gpu);
 		AdamOptimizer(optimizer);
+		
 
 		if (i % 1000 == 999)
 		{
+
 			float average_loss = sumMatrix(loss) / (1000 * BATCH_SIZE);
-			float time_in_sec = (clock() - start_clk) / (float)CLOCKS_PER_SEC;
+			float time_in_sec = (clock() - clk) / (float)CLOCKS_PER_SEC;
 			int nps = (1000 * BATCH_SIZE) / time_in_sec;
 			printf("step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
 			fprintf(log, "step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
 			fclose(log);
 			log = fopen("training.log", "a");
 			zeroMatrix(loss);
+			clk = clock();
 		}
 		if (i % 6000 == 5999)
 		{
@@ -96,6 +94,7 @@ int main()
 			printf("%d. epoch finished\n", i / 6000 + 1);
 		}
 	}
+
 	saveNN(model, "devre.nnue");
 
 	freeMatrix(loss);

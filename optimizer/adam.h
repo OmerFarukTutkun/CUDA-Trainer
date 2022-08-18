@@ -27,7 +27,7 @@ static const float epsilon = 1e-8;
 static const float clip_min = -1.9;
 static const float clip_max = 1.9;
 
-__global__ void AdamOptimizerKernel(float *values, float *gradients, float *first_moment, float *second_moment, int size, float alpha, float beta1, float beta2, float eps);
+__global__ void AdamOptimizerKernel(float *values, float *gradients, float *first_moment, float *second_moment, int size, float alpha, float beta1, float beta2, float eps, int clip);
 void initAdam(Adam *optimizer, NN *model, float lr, int clip);
 void AdamOptimizer(Adam *optimizer);
 void freeAdam(Adam *opt);

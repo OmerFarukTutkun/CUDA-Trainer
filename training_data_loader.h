@@ -4,11 +4,11 @@
 
 typedef struct Data
 {
-    uint64_t occupied; // occupancy without kings, A1 = 0
-    int16_t eval;
-    int8_t result; // -1 , 0 , 1
-    uint8_t side;  // 1 for black 0 for white
-    uint8_t wking; // king square
+    uint64_t occupied;  // occupancy without kings, A1 = 0
+    int16_t eval;       // from side-to-move percpective
+    int8_t result;      // -1 , 0 , 1
+    uint8_t side;       // 1 for black 0 for white
+    uint8_t wking;      // king square
     uint8_t bking;
     uint8_t packed[15]; // 2 pieces in one byte
 } Data;
@@ -71,6 +71,7 @@ int nn_index(int king, int piece, int sq, int side)
         return king_indices[king] * 768 + nn_indices[side][piece] * 64 + HorizontalMirror(sq);
     else
         return king_indices[king] * 768 + nn_indices[side][piece] * 64 + sq;
+    return nn_indices[side][piece] * 64 + sq;
 }
 int read_position(Data *data)
 {
