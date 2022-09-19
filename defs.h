@@ -12,7 +12,7 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
-#define TRANINNG_FILE ""
+#define TRANINNG_FILE "trainingData"
 
 #define SigmoidCoefficient (1.0f / 250.0f)
 #define BlockSize 256

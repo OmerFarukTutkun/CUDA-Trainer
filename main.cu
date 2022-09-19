@@ -56,7 +56,13 @@ int main()
 	for (int i = 0; i < 6000 * number_of_epoch; i++)
 	{
 		if (!fread(buffer, sizeof(Data), BATCH_SIZE, file))
-			break;
+		{
+			fseek(file , 0 ,SEEK_SET);
+			if (!fread(buffer, sizeof(Data), BATCH_SIZE, file))
+			{
+				break;
+			}
+		}
 		load_data(buffer, BATCH_SIZE, feature_indices_us_cpu, feature_indices_enemy_cpu, eval_cpu, result_cpu);
 
 		cudaMemcpy(feature_indices_enemy_gpu, feature_indices_enemy_cpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE, cudaMemcpyHostToDevice);
