@@ -11,6 +11,11 @@ typedef struct Activation
 	void (*backprop)(Matrix *, Matrix *, Matrix *);
 } Activation;
 
+extern Activation Relu ;
+extern Activation ClippedRelu ;
+extern Activation Sigmoid;
+
+
 // activation functions
 void relu(Matrix *unactivated, Matrix *activated);
 void sigmoid(Matrix *unactivated, Matrix *activated);
@@ -29,5 +34,6 @@ __global__ void clippedReluKernel(float *unactivated, float *activated, int N);
 __global__ void backpropReluKernel(float *unactivated, float *activated, float *gradients, int N);
 __global__ void backpropSigmoidKernel(float *unactivated, float *activated, float *gradients, int N);
 __global__ void backpropClippedReluKernel(float *unactivated, float *activated, float *gradients, int N);
+
 
 #endif

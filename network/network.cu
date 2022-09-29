@@ -4,11 +4,10 @@ void initNN(NN *model)
     model->num_of_layers = 2;
     model->layers = (Layer *)malloc(sizeof(Layer) * model->num_of_layers);
  
-    initLayer(FeatureTransformer, INPUT_SIZE, L1, model->layers, (Activation){.apply = relu , .backprop= backpropRelu}, BATCH_SIZE);
-    initLayer(Linear, 2 *L1, 1, model->layers + 1, (Activation){.apply = sigmoid , .backprop= backpropSigmoid}, BATCH_SIZE);
-
-
-    model->loss = (Loss){.apply = MSE, .backprop = backpropMSE};
+    initLayer(FeatureTransformer, INPUT_SIZE, L1, model->layers, Relu, BATCH_SIZE);
+    initLayer(Linear, 2 *L1, 1, model->layers + 1, Sigmoid, BATCH_SIZE);
+    
+    model->loss = MSE;
 }
 
 void forward_model(int32_t *feature_indices_us, int32_t *feature_indices_enemy, NN *model)

@@ -1,5 +1,8 @@
 #include "activations.h"
 
+Activation Relu = {relu, backpropRelu};
+Activation ClippedRelu = {clippedRelu, backpropClippedRelu};
+Activation Sigmoid = {sigmoid, backpropSigmoid};
 void relu(Matrix *unactivated, Matrix *activated)
 {
 	assert(checkMemory(unactivated) && checkMemory(activated));

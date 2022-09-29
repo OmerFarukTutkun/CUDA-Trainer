@@ -9,16 +9,18 @@ typedef struct Loss
 	void (*apply)(Matrix *, Matrix *, Matrix *);
 	void (*backprop)(Matrix *, Matrix *, Matrix *);
 } Loss;
+extern Loss MSE;
+extern Loss MAE;
+void mse(Matrix *prediction, Matrix *target, Matrix *loss);
+void mae(Matrix *prediction, Matrix *target, Matrix *loss);
 
-void MSE(Matrix *prediction, Matrix *target, Matrix *loss);
-void MAE(Matrix *prediction, Matrix *target, Matrix *loss);
+void backpropMse(Matrix *prediction, Matrix *target, Matrix *lossGradient);
+void backpropMae(Matrix *prediction, Matrix *target, Matrix *lossGradient);
 
-void backpropMSE(Matrix *prediction, Matrix *target, Matrix *lossGradient);
-void backpropMAE(Matrix *prediction, Matrix *target, Matrix *lossGradient);
+__global__ void mseKernel(float *prediction, float *target, float *loss, int N);
+__global__ void maeKernel(float *prediction, float *target, float *loss, int N);
 
-__global__ void MSEKernel(float *prediction, float *target, float *loss, int N);
-__global__ void MAEKernel(float *prediction, float *target, float *loss, int N);
+__global__ void backpropMseKernel(float *prediction, float *target, float *lossGradient, int N);
+__global__ void backpropMaeKernel(float *prediction, float *target, float *lossGradient, int N);
 
-__global__ void backpropMSEKernel(float *prediction, float *target, float *lossGradient, int N);
-__global__ void backpropMAEKernel(float *prediction, float *target, float *lossGradient, int N);
 #endif
