@@ -14,16 +14,20 @@
 
 #define TRANINNG_FILE "trainingData"
 
-#define SigmoidCoefficient (1.0f / 250.0f)
-#define BlockSize 256
 
+#define SigmoidCoefficient (1.0f / 400.0f)
+
+#define FT_BLOCK_SIZE 768
+#define BlockSize 512 //1024 is the maximum we can make
 #define BATCH_SIZE 16384
+
+
 #define MAX_ACTIVE_FEATURE 32
-#define LR 0.002
+static double LR = 0.001;
 
 #define LAMBDA 1.0 // 1.0: purely on eval , 0.0: purely on game result
-#define INPUT_SIZE 32*768
-#define L1 512
+#define INPUT_SIZE 768
+#define L1 1536
 
-#define FT_BLOCK_SIZE MIN(L1, BlockSize)
+
 #endif

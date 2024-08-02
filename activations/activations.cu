@@ -3,6 +3,8 @@
 Activation Relu = {relu, backpropRelu};
 Activation ClippedRelu = {clippedRelu, backpropClippedRelu};
 Activation Sigmoid = {sigmoid, backpropSigmoid};
+Activation SquaredClippedRelu = {squaredClippedRelu, backpropSquaredClippedRelu};
+
 void relu(Matrix *unactivated, Matrix *activated)
 {
 	assert(checkMemory(unactivated) && checkMemory(activated));
@@ -38,6 +40,18 @@ void clippedRelu(Matrix *unactivated, Matrix *activated)
 	clippedReluKernel<<<nBlocks, BlockSize>>>(unactivated->data, activated->data, size);
 
 	cudaDeviceSynchronize();
+}
+void squaredClippedRelu(Matrix *unactivated, Matrix *activated)
+{
+    assert(checkMemory(unactivated) && checkMemory(activated));
+    assert(checkDimension(unactivated, activated));
+
+    int size = unactivated->rows * unactivated->columns;
+    int nBlocks = (size - 1) / BlockSize + 1;
+
+    squaredClippedReluKernel<<<nBlocks, BlockSize>>>(unactivated->data, activated->data, size);
+
+    cudaDeviceSynchronize();
 }
 
 void backpropRelu(Matrix *unactivated, Matrix *activated, Matrix *gradients)
@@ -75,4 +89,16 @@ void backpropClippedRelu(Matrix *unactivated, Matrix *activated, Matrix *gradien
 	backpropClippedReluKernel<<<nBlocks, BlockSize>>>(unactivated->data, activated->data, gradients->data, size);
 
 	cudaDeviceSynchronize();
+}
+void backpropSquaredClippedRelu(Matrix *unactivated, Matrix *activated, Matrix *gradients)
+{
+    assert(checkMemory(unactivated) && checkMemory(activated) && checkMemory(gradients));
+    assert(checkDimension(unactivated, activated) && checkDimension(gradients, activated));
+
+    int size = unactivated->rows * unactivated->columns;
+    int nBlocks = (size - 1) / BlockSize + 1;
+
+    backpropSquaredClippedReluKernel<<<nBlocks, BlockSize>>>(unactivated->data, activated->data, gradients->data, size);
+
+    cudaDeviceSynchronize();
 }

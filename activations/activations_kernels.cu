@@ -19,6 +19,15 @@ __global__ void clippedReluKernel(float *unactivated, float *activated, int N)
 		activated[index] = MAX(0.0f, MIN(ClippedReluMax, unactivated[index]));
 }
 
+__global__ void squaredClippedReluKernel(float *unactivated, float *activated, int N)
+{
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    if (index < N) {
+        activated[index] = MAX(0.0f, MIN(ClippedReluMax, unactivated[index]));
+        activated[index] =  activated[index] *  activated[index];
+    }
+}
+
 __global__ void backpropReluKernel(float *unactivated, float *activated, float *gradients, int N)
 {
 	int index = blockDim.x * blockIdx.x + threadIdx.x;
@@ -42,4 +51,17 @@ __global__ void backpropClippedReluKernel(float *unactivated, float *activated, 
 		if (unactivated[index] < 0 || unactivated[index] > ClippedReluMax)
 			gradients[index] = 0.0f;
 	}
+}
+__global__ void backpropSquaredClippedReluKernel(float *unactivated, float *activated, float *gradients, int N)
+{
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    if (index < N)
+    {
+        if (unactivated[index] < 0 || unactivated[index] > ClippedReluMax)
+            gradients[index] = 0.0f;
+        else
+        {
+            gradients[index] *= 2*unactivated[index];
+        }
+    }
 }

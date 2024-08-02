@@ -6,8 +6,34 @@
 #include "optimizer/adam.h"
 #include "training_data_loader.h"
 #include <unistd.h>
-int main()
+#include <iostream>
+#include <algorithm>
+#include <random>
+#include <chrono>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <ctime>
+
+
+int main(int argc, char **argv )
 {
+
+    time_t curr_time;
+    tm * curr_tm;
+    char tempChArray[100];
+    time(&curr_time);
+    curr_tm = localtime(&curr_time);
+    strftime(tempChArray, 50, "%m.%d.%Y_%T", curr_tm);
+
+    int result = mkdir(tempChArray, 0777);
+    if(result != 0)
+    {
+        std::cout << "Cannot mkdir: " << tempChArray << std::endl;
+        return 0;
+    }
+
+    std::string folderName(tempChArray);
+
 	srand(time(NULL));
 	initOnes();
 	NN *model = (NN *)malloc(sizeof(NN));
@@ -20,14 +46,19 @@ int main()
 	initAdam(optimizer, model, LR, true);
 
 	FILE *file = fopen(TRANINNG_FILE, "rb");
-	FILE *log = fopen("training.log", "w");
+	FILE *logFile = fopen((folderName + "/training.log").c_str(), "w");
 
 	time_t tm;
 	time(&tm);
-	fprintf(log, "Date = %s", ctime(&tm));
-	fprintf(log, "Arch name: %s\n", ARCH_NAME);
+	fprintf(logFile, "Date = %s", ctime(&tm));
+	fprintf(logFile, "Arch name: %s\n", ARCH_NAME);
 
-	Data *buffer = (Data *)malloc(sizeof(Data) * BATCH_SIZE);
+    constexpr int iterPerEpoch = 100000000/BATCH_SIZE;
+    constexpr auto bufferMemory = sizeof(Board) * BATCH_SIZE*2*iterPerEpoch; //large memory(6.4gb) to 200m read data at once and shuffle it
+
+    auto *buffer = (Board *)malloc(bufferMemory);
+    constexpr int numBatches =  bufferMemory / (sizeof(Board) * BATCH_SIZE);
+
 
 	int32_t *feature_indices_us_cpu = (int32_t *)malloc(MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
 	int32_t *feature_indices_enemy_cpu = (int32_t *)malloc(MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
@@ -37,6 +68,7 @@ int main()
 	cudaMalloc(&feature_indices_us_gpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
 	cudaMalloc(&feature_indices_enemy_gpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE);
 
+
 	float *eval_cpu = (float *)malloc(sizeof(float) * BATCH_SIZE);
 	Matrix *eval_gpu = createMatrix(BATCH_SIZE, 1);
 
@@ -44,26 +76,35 @@ int main()
 	Matrix *result_gpu = createMatrix(BATCH_SIZE, 1);
 
 	Matrix *target = createMatrix(BATCH_SIZE, 1);
-	
+
+
 	if (file == NULL)
 	{
 		printf("Traning data could not open\n");
 		return 0;
 	}
+
 	printf("training started\n");
-	int number_of_epoch = 50;
+	int number_of_epoch = 500;
 	long int clk = clock();
-	for (int i = 0; i < 6000 * number_of_epoch; i++)
+    double dLoss = 0.0f;
+
+	for (int i = 0; i < iterPerEpoch * number_of_epoch; i++)
 	{
-		if (!fread(buffer, sizeof(Data), BATCH_SIZE, file))
-		{
-			fseek(file , 0 ,SEEK_SET);
-			if (!fread(buffer, sizeof(Data), BATCH_SIZE, file))
-			{
-				break;
-			}
-		}
-		load_data(buffer, BATCH_SIZE, feature_indices_us_cpu, feature_indices_enemy_cpu, eval_cpu, result_cpu);
+        int index = i % numBatches;
+        if(index == 0) {
+            if (numBatches * BATCH_SIZE != fread(buffer, sizeof(Board), numBatches * BATCH_SIZE, file)) {
+                //return back to the start of the file
+                fseek(file, 0, SEEK_SET);
+
+                if (numBatches * BATCH_SIZE != fread(buffer, sizeof(Board), numBatches * BATCH_SIZE, file)) {
+                    break;
+                }
+            }
+            std::shuffle(buffer, buffer + numBatches * BATCH_SIZE, std::mt19937(std::random_device()()));
+        }
+
+		load_data(buffer + index*BATCH_SIZE, BATCH_SIZE, feature_indices_us_cpu, feature_indices_enemy_cpu, eval_cpu, result_cpu);
 
 		cudaMemcpy(feature_indices_enemy_gpu, feature_indices_enemy_cpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE, cudaMemcpyHostToDevice);
 		cudaMemcpy(feature_indices_us_gpu, feature_indices_us_cpu, MAX_ACTIVE_FEATURE * sizeof(int32_t) * BATCH_SIZE, cudaMemcpyHostToDevice);
@@ -78,37 +119,45 @@ int main()
 		backward_model(model, target, loss, feature_indices_us_gpu, feature_indices_enemy_gpu);
 		AdamOptimizer(optimizer);
 		
+        dLoss += sumMatrix(loss)/BATCH_SIZE;
+        zeroMatrix(loss);
 
-		if (i % 1000 == 999)
+		if (i % iterPerEpoch == iterPerEpoch -1)
 		{
+			printf("%d. epoch finished\n", i / iterPerEpoch + 1);
 
-			float average_loss = sumMatrix(loss) / (1000 * BATCH_SIZE);
-			float time_in_sec = (clock() - clk) / (float)CLOCKS_PER_SEC;
-			int nps = (1000 * BATCH_SIZE) / time_in_sec;
-			printf("step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
-			fprintf(log, "step: %10d  loss : %10f 	nps: %10d\n", i + 1, average_loss, nps);
-			fclose(log);
-			log = fopen("training.log", "a");
-			zeroMatrix(loss);
-			clk = clock();
-		}
-		if (i % 6000 == 5999)
-		{
-			char filename[100];
-			sprintf(filename, "devre_epoch%d.nnue", (i + 1) / 6000);
-			saveNN(model, filename);
-			printf("%d. epoch finished\n", i / 6000 + 1);
+            if((i + 1) / iterPerEpoch % 100 == 0)
+                optimizer->lr = 0.3*optimizer->lr;
+
+            if((i + 1) / iterPerEpoch % 10 == 0)
+            {
+                char filename[100];
+                sprintf(filename, (folderName + "/devre_epoch%d.nnue").c_str(), (i + 1) / iterPerEpoch);
+                saveNN(model, filename);
+            }
+
+            float average_loss = dLoss / iterPerEpoch;
+            float time_in_sec = (clock() - clk) / (float)CLOCKS_PER_SEC;
+            int nps = (iterPerEpoch * BATCH_SIZE) / time_in_sec;
+
+            printf("epoch: %10d  loss : %10f 	nps: %10d\n", (i + 1) / iterPerEpoch, average_loss, nps);
+            fprintf(logFile, "epoch: %10d  loss : %10f 	nps: %10d\n", (i + 1) / iterPerEpoch, average_loss, nps);
+            fclose(logFile);
+            logFile = fopen((folderName + "/training.log").c_str(), "a");
+
+            clk = clock();
+            dLoss = 0.0f;
 		}
 	}
 
-	saveNN(model, "devre.nnue");
+	saveNN(model, (folderName + "/devre.nnue").c_str());
 
 	freeMatrix(loss);
 	freeAdam(optimizer);
 	freeNN(model);
 
 	fclose(file);
-	fclose(log);
+	fclose(logFile);
 	free(buffer);
 	free(feature_indices_enemy_cpu);
 	free(feature_indices_us_cpu);

@@ -4,7 +4,7 @@ void initNN(NN *model)
     model->num_of_layers = 2;
     model->layers = (Layer *)malloc(sizeof(Layer) * model->num_of_layers);
  
-    initLayer(FeatureTransformer, INPUT_SIZE, L1, model->layers, Relu, BATCH_SIZE);
+    initLayer(FeatureTransformer, INPUT_SIZE, L1, model->layers, SquaredClippedRelu, BATCH_SIZE);
     initLayer(Linear, 2 *L1, 1, model->layers + 1, Sigmoid, BATCH_SIZE);
     
     model->loss = MSE;
